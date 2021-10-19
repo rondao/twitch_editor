@@ -1,4 +1,5 @@
 import argparse
+import json
 import requests
 import time
 import sys
@@ -26,4 +27,4 @@ if __name__ == "__main__":
     parser.add_argument('video_id', type=int, help='Twitch video ID to download chat from.')
 
     args = parser.parse_args()
-    print(collect_chat(args.video_id))
+    print(json.dumps(collect_chat(args.video_id)))
