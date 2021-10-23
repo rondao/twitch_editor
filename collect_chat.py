@@ -28,7 +28,7 @@ def collect_chat_from_channel(channel: str, oauth_token: str, nickname: str) -> 
 
 def collect_chat_from_vod(video_id: int) -> list[dict[str, object]]:
     url = f"https://api.twitch.tv/v5/videos/{video_id}/comments?cursor="
-    response_json = requests.get(url, headers={"Client-ID": "hdaoisxhhrc9h3lz3k24iao13crkkq8",
+    response_json = requests.get(url, headers={"Client-Id": "hdaoisxhhrc9h3lz3k24iao13crkkq8",
                                                "Accept": "application/vnd.twitchtv.v5+json"}).json()
 
     comments = response_json["comments"]
@@ -36,7 +36,7 @@ def collect_chat_from_vod(video_id: int) -> list[dict[str, object]]:
         print(comments[-1]["content_offset_seconds"], file=sys.stderr)
         time.sleep(0.5)
         response_json = requests.get(url + response_json["_next"],
-                                     headers={"Client-ID": "hdaoisxhhrc9h3lz3k24iao13crkkq8",
+                                     headers={"Client-Id": "hdaoisxhhrc9h3lz3k24iao13crkkq8",
                                               "Accept": "application/vnd.twitchtv.v5+json"}).json()
         comments += response_json["comments"]
 
