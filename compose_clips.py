@@ -43,22 +43,26 @@ def create_composition(edit_filename: str, transition_duration: int = 1) -> str:
                     inputs.append(["-ss", start_time, "-to",
                                   end_time, "-i", video_file])
 
-                    start_seconds = _time_to_sec(start_time)
-                    end_seconds = _time_to_sec(end_time)
+                    duration = _time_to_sec(
+                        end_time) - _time_to_sec(start_time)
 
                     input = len(inputs) - 1
-                    filter_complex += f"[{input}:v] trim=end={end_seconds - start_seconds - transition_duration},setpts=PTS-STARTPTS [begin_v{input}];"
-                    filter_complex += f"[{input}:v] trim=start={end_seconds - start_seconds - transition_duration},setpts=PTS-STARTPTS [end_v{input}];"
-                    filter_complex += f"[{input}:a] atrim=end={end_seconds - start_seconds - transition_duration},asetpts=PTS-STARTPTS [begin_a{input}];"
-                    filter_complex += f"[{input}:a] atrim=start={end_seconds - start_seconds - transition_duration},asetpts=PTS-STARTPTS [end_a{input}];"
+                    filter_complex += f"[{input}:v] trim=end={duration - transition_duration},setpts=PTS-STARTPTS [begin_v{input}];"
+                    filter_complex += f"[{input}:v] trim=start={duration - transition_duration},setpts=PTS-STARTPTS [end_v{input}];"
+                    filter_complex += f"[{input}:a] atrim=start={transition_duration / 2}:end={duration - transition_duration},asetpts=PTS-STARTPTS,afade=t=in:d={transition_duration / 2} [begin_a{input}];"
+                    filter_complex += f"[{input}:a] atrim=start={duration - transition_duration}:end={duration - transition_duration / 2},asetpts=PTS-STARTPTS,afade=t=out:d={transition_duration / 2} [end_a{input}];"
 
     for i in range(0, len(inputs) - 1):
         filter_complex += f"[end_v{i}] [begin_v{i + 1}] xfade=transition=fadewhite:duration={transition_duration} [t{i}_v{i+1}];"
-        filter_complex += f"[end_a{i}] [begin_a{i + 1}] acrossfade=duration={transition_duration} [t{i}_a{i+1}];"
 
-    filter_complex += "[begin_v0][begin_a0]" + "".join(
-        [f"[t{i}_v{i+1}][t{i}_a{i+1}]" for i in range(0, len(inputs) - 1)]) + f"[end_v{len(inputs) - 1}][end_a{len(inputs) - 1}]"
-    filter_complex += f"concat=n={len(inputs) + 1}:v=1:a=1 [outv][outa]"
+    filter_complex += "[begin_v0]" + "".join(
+        [f"[t{i}_v{i+1}]" for i in range(0, len(inputs) - 1)]) + f"[end_v{len(inputs) - 1}]"
+    filter_complex += f"concat=n={len(inputs) + 1} [outv];"
+
+    filter_complex += "[begin_a0] adelay=delays=500:all=1 [fixed_begin_a0];"
+    filter_complex += "[fixed_begin_a0]" + "".join(
+        [f"[end_a{i}][begin_a{i + 1}]" for i in range(0, len(inputs) - 1)]) + f"[end_a{len(inputs) - 1}]"
+    filter_complex += f"concat=n={len(inputs) * 2}:v=0:a=1 [outa]"
 
     ffmpeg = ["ffmpeg"]
     for input in inputs:
