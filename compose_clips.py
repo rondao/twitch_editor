@@ -12,7 +12,7 @@ def clipping_commands_from_file(edit_filename: str) -> list[str]:
                 case "f":
                     video_file = arg
                 case "c":
-                    start_time, duration = arg.split(" ", 1)
+                    start_time, duration, _ = arg.split(" ", 2)
                     clipping_commands.append(
                         f"ffmpeg -y -ss {start_time} -i {video_file} -t {duration} -f rawvideo -vcodec rawvideo clip{len(clipping_commands)}.raw")
     return clipping_commands
@@ -38,7 +38,7 @@ def create_composition(edit_filename: str, transition_duration: int = 1) -> str:
                     if not video_file:
                         raise Exception(
                             "Clip command [c " + arg + "] don't have a reference video file.")
-                    start_time, end_time = arg.split(" ", 1)
+                    start_time, end_time, _ = arg.split(" ", 2)
 
                     inputs.append(["-ss", start_time, "-to",
                                   end_time, "-i", video_file])
