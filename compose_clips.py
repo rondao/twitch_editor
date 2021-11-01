@@ -71,7 +71,8 @@ def create_composition(edit_filename: str, transition_duration: int = 1) -> str:
     ffmpeg.extend(["-filter_complex", filter_complex])
 
     output = "output.mp4"
-    ffmpeg.extend(["-map", "[outv]", "-map", "[outa]", "-y", output])
+    ffmpeg.extend(["-map", "[outv]", "-map", "[outa]",
+                  "-pix_fmt", "yuv420p", "-y", output])
 
     # print(ffmpeg)
     subprocess.run(ffmpeg)
