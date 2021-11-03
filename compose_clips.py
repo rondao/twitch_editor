@@ -59,7 +59,7 @@ def create_composition(edit_filename: str, transition_duration: int = 1) -> str:
         [f"[t{i}_v{i+1}]" for i in range(0, len(inputs) - 1)]) + f"[end_v{len(inputs) - 1}]"
     filter_complex += f"concat=n={len(inputs) + 1} [outv];"
 
-    filter_complex += "[begin_a0] adelay=delays=500:all=1 [fixed_begin_a0];"
+    filter_complex += f"[begin_a0] adelay=delays={transition_duration * 1000.0 / 2}:all=1 [fixed_begin_a0];"
     filter_complex += "[fixed_begin_a0]" + "".join(
         [f"[end_a{i}][begin_a{i + 1}]" for i in range(0, len(inputs) - 1)]) + f"[end_a{len(inputs) - 1}]"
     filter_complex += f"concat=n={len(inputs) * 2}:v=0:a=1 [outa]"
