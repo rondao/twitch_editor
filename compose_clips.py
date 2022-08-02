@@ -8,13 +8,12 @@ def clipping_commands_from_file(edit_filename: str) -> list[str]:
         video_file: str
         while (line := edit_file.readline().rstrip()):
             command, arg = line.split(" ", 1)
-            match command:
-                case "f":
-                    video_file = arg
-                case "c":
-                    start_time, duration, _ = arg.split(" ", 2)
-                    clipping_commands.append(
-                        f"ffmpeg -y -ss {start_time} -i {video_file} -t {duration} -f rawvideo -vcodec rawvideo clip{len(clipping_commands)}.raw")
+            if command == "f":
+                video_file = arg
+            elif command == "c":
+                start_time, duration, _ = arg.split(" ", 2)
+                clipping_commands.append(
+                    f"ffmpeg -y -ss {start_time} -i {video_file} -t {duration} -f rawvideo -vcodec rawvideo clip{len(clipping_commands)}.raw")
     return clipping_commands
 
 
@@ -31,26 +30,25 @@ def create_composition(edit_filename: str, transition_duration: int = 1) -> str:
         video_file: str
         while (line := edit_file.readline().rstrip()):
             command, arg = line.split(" ", 1)
-            match command:
-                case "f":
-                    video_file = arg
-                case "c":
-                    if not video_file:
-                        raise Exception(
-                            "Clip command [c " + arg + "] don't have a reference video file.")
-                    start_time, end_time, _ = arg.split(" ", 2)
+            if command == "f":
+                video_file = arg
+            elif command == "c":
+                if not video_file:
+                    raise Exception(
+                        "Clip command [c " + arg + "] don't have a reference video file.")
+                start_time, end_time, _ = arg.split(" ", 2)
 
-                    inputs.append(["-ss", start_time, "-to",
-                                  end_time, "-i", video_file])
+                inputs.append(["-ss", start_time, "-to",
+                              end_time, "-i", video_file])
 
-                    duration = _time_to_sec(
-                        end_time) - _time_to_sec(start_time)
+                duration = _time_to_sec(
+                    end_time) - _time_to_sec(start_time)
 
-                    input = len(inputs) - 1
-                    filter_complex += f"[{input}:v] trim=end={duration - transition_duration},setpts=PTS-STARTPTS [begin_v{input}];"
-                    filter_complex += f"[{input}:v] trim=start={duration - transition_duration},setpts=PTS-STARTPTS [end_v{input}];"
-                    filter_complex += f"[{input}:a] atrim=start={transition_duration / 2}:end={duration - transition_duration},asetpts=PTS-STARTPTS,afade=t=in:d={transition_duration / 2} [begin_a{input}];"
-                    filter_complex += f"[{input}:a] atrim=start={duration - transition_duration}:end={duration - transition_duration / 2},asetpts=PTS-STARTPTS,afade=t=out:d={transition_duration / 2} [end_a{input}];"
+                input = len(inputs) - 1
+                filter_complex += f"[{input}:v] trim=end={duration - transition_duration},setpts=PTS-STARTPTS [begin_v{input}];"
+                filter_complex += f"[{input}:v] trim=start={duration - transition_duration},setpts=PTS-STARTPTS [end_v{input}];"
+                filter_complex += f"[{input}:a] atrim=start={transition_duration / 2}:end={duration - transition_duration},asetpts=PTS-STARTPTS,afade=t=in:d={transition_duration / 2} [begin_a{input}];"
+                filter_complex += f"[{input}:a] atrim=start={duration - transition_duration}:end={duration - transition_duration / 2},asetpts=PTS-STARTPTS,afade=t=out:d={transition_duration / 2} [end_a{input}];"
 
     for i in range(0, len(inputs) - 1):
         filter_complex += f"[end_v{i}] [begin_v{i + 1}] xfade=transition=fadewhite:duration={transition_duration} [t{i}_v{i+1}];"
